@@ -6,10 +6,8 @@ MAINTAINER Tige Phillips <tige@tigelane.com>
 RUN apt-get update
 RUN apt-get -y upgrade
 
-###########
-# Base Applications
-###########
-# Install Python 3
+# Install Python 3- Ubuntu
+##########################
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y install software-properties-common && add-apt-repository ppa:deadsnakes/ppa && apt-get update
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y install python3.6 python-pip
 RUN echo "alias python=python3.6" >> ~/.bash_aliases
@@ -20,50 +18,74 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get -y install git vim curl unzip wget
 # jq JSON pre-processor - support the terraform install
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y install jq
 
+# Install Terraform - Ubuntu
+############################
 WORKDIR /root/
-
-# Install Terraform
 COPY ./ubuntu_install_terraform.sh ./
-RUN ./ubuntu_install_terraform.sh && rm ./ubuntu_install_terraform.sh
+RUN chmod 744 ubuntu_install_terraform.sh && \
+    ./ubuntu_install_terraform.sh && \
+    rm ./ubuntu_install_terraform.sh
 
-# Install Packer
-RUN wget https://releases.hashicorp.com/packer/1.2.4/packer_1.2.4_linux_amd64.zip && unzip packer_1.2.4_linux_amd64.zip
+# Install Packer - Ubuntu
+#########################
+RUN wget https://releases.hashicorp.com/packer/1.2.4/packer_1.2.4_linux_amd64.zip && \
+    unzip packer_1.2.4_linux_amd64.zip
 
-# Packer plugins
+# Packer plugins - Ubuntu
+#########################
 RUN mkdir ~/.packer.d && mkdir ~/.packer.d/plugins
 RUN wget -O /usr/local/bin/packer-builder-vsphere-iso https://github.com/martezr/packer-builder-vsphere/releases/download/v1.5/packer-builder-vsphere-iso.linux
 RUN wget -O /usr/local/bin/packer-builder-vsphere-clone https://github.com/jetbrains-infra/packer-builder-vsphere/releases/download/v2.0/packer-builder-vsphere-clone.linux
 
-# Install GO
+# Install GO - Ubuntu
+#####################
 # Following installs golang 1.6
 #RUN apt-get install -y golang-go
 # Follow installs golang 1.7
 RUN wget https://storage.googleapis.com/golang/go1.7.1.linux-amd64.tar.gz
 RUN tar -zxvf go1.7.1.linux-amd64.tar.gz -C /usr/local/
 
+RUN mkdir /root/go/
 ENV GOROOT "/usr/local/go"
 ENV GOPATH "/root/go"
 ENV PATH "$PATH:$GOROOT/bin:$GOPATH/bin"
-RUN mkdir $HOME/go/
 RUN mkdir -p $GOPATH/src/github.com/ignw
 WORKDIR $GOPATH/src/github.com/
 
-# SDK Dependancies
+# SDK Dependancies - Ubuntu
+###########################
 RUN go get github.com/Jeffail/gabs
 
-# ACI GO SDK Install
+# ACI GO SDK Install - Ubuntu
+#############################
+RUN mkdir -p $GOPATH/src/github.com/ignw
 WORKDIR $GOPATH/src/github.com/ignw
-RUN git clone --single-branch -b fix-ap-children https://github.com/IGNW/cisco-aci-go-sdk.git
-RUN git clone https://github.com/IGNW/terraform-provider-cisco-aci.git
-# RUN git clone https://github.com/terraform-providers/terraform-provider-aws.git
+RUN git clone https://github.com/IGNW/cisco-aci-go-sdk.git
+WORKDIR $GOPATH/src/github.com/ignw/cisco-aci-go-sdk
+RUN make fmt && make build
+
+# ACI Terraform Module - Ubuntu
+###############################
+RUN mkdir -p $GOPATH/src/github.com/hashicorp
+WORKDIR $GOPATH/src/github.com/hashicorp
+RUN git clone https://github.com/hashicorp/terraform.git
+WORKDIR $GOPATH/src/github.com/hashicorp/terraform
+
+WORKDIR $GOPATH/src/github.com/ignw
+RUN git clone --single-branch -b provider-implementations https://github.com/IGNW/terraform-provider-cisco-aci.git
 WORKDIR $GOPATH/src/github.com/ignw/terraform-provider-cisco-aci
-RUN gofmt && make build
+RUN gofmt
+#    make build
 
 # Move all the files around and change permissions
 WORKDIR /root
 RUN chmod 755 /usr/local/bin/packer-builder-*
-RUN mv packer /usr/local/bin && rm -R packer_* && rm go1.*
+RUN mv packer /usr/local/bin && \
+    rm -R packer_* && \
+    rm go1.*
 
 #RUN mkdir tf-aci
 #WORKDIR tf-aci
 #COPY ./ ./
+
+WORKDIR $GOPATH/src/github.com/ignw/terraform-provider-cisco-aci

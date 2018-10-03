@@ -1,0 +1,14 @@
+
+
+travis encrypt APIC_HOST="https://207.162.210.94" --add env.global
+travis encrypt APIC_USER="apidev" --add env.global
+travis encrypt APIC_PASS="4g3Lx8J0dLucfWhA6N62h9xT49Q7h2MJin3jUY91" --add env.global
+travis encrypt APIC_ALLOW_INSECURE="true" --add env.global
+
+
+travis encrypt MYVAR="somestuff" --add env.global
+
+travis encrypt APIC_HOST="https://207.162.210.94" --add
+travis encrypt APIC_USER="apidev" --add
+travis encrypt APIC_PASS="4g3Lx8J0dLucfWhA6N62h9xT49Q7h2MJin3jUY91" --add
+travis encrypt APIC_ALLOW_INSECURE="true" --add
